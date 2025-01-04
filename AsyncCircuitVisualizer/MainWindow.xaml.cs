@@ -37,7 +37,7 @@ namespace AsyncCircuitVisualizer
 		{
 			try
 			{
-				string input = InputTextBox.Text;
+				string input = InputTextBox.Text; //1,3,5,7,8,11,12,17,19,21,23,24,28
 				var minterms = input.Split(',').Select(int.Parse).ToList();
 				int variableCount = CountVariables(minterms);
 
@@ -173,7 +173,7 @@ namespace AsyncCircuitVisualizer
 			return string.Join(" + ", result);
 		}
 
-		private UIElement CreateGateControl(string type, string output, List<string> inputs, string inputName = null)
+		private UIElement CreateGateControl(string type, string? output, List<string> inputs, string inputName = null)
 		{
 			UserControl gateControl;
 
@@ -199,7 +199,7 @@ namespace AsyncCircuitVisualizer
 					((Input)gateControl).ConfigureGate(inputName, 1);
 					break;
 
-				case "MemoryModul":
+				case "Memory":
 					gateControl = new MemoryModul();
 					((MemoryModul)gateControl).ConfigureGate("MemoryModule", 1);
 					break;
@@ -224,8 +224,10 @@ namespace AsyncCircuitVisualizer
 			var gates = ParseBooleanExpression(booleanExpression);
 			_MemoryModules = IdentifyMemoryModules(gates);
 
+			int xOffset = 100;
+
 			// Initialize column positions for each gate type
-			double inputX = 50, memoryX = 150, inverterX = 250, andX = 350, orX = 450, outputX = 550;
+			double inputX = 50, memoryX = 150, inverterX = 250+xOffset, andX = 350+xOffset, orX = 450 + xOffset, outputX = 550+xOffset;
 			double ySpacing = 100;
 
 			double inputY = 50, memoryY = 50, inverterY = 50, andY = 50, orY = 50, outputY = 50;
@@ -240,7 +242,7 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetTop(gateControl, inputY);
 
 				CircuitCanvas.Children.Add(gateControl);
-				gatePositions[input.ToString()] = new Point(inputX + 40, inputY + 25);
+				gatePositions[input.ToString()] = new Point(inputX + 80, inputY + 25);
 
 				inputY += ySpacing;
 			}
@@ -252,8 +254,10 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetLeft(gateControl, memoryX);
 				Canvas.SetTop(gateControl, memoryY);
 
+
+
 				CircuitCanvas.Children.Add(gateControl);
-				gatePositions[memory.Output] = new Point(memoryX + 40, memoryY + 25);
+				gatePositions[memory.Output] = new Point(memoryX + 80, memoryY + 25);
 
 				// Connect memory module to its input
 				if (gatePositions.ContainsKey(memory.Inputs[0]))
@@ -265,7 +269,9 @@ namespace AsyncCircuitVisualizer
 			}
 
 			// Draw inverters
-			foreach (var gate in gates.Where(g => g.Type == "Inverter"))
+			List<Gate> orderedInverters = gates.Where(g => g.Type == "Inverter").OrderBy(gate => gate.Output).ToList();
+			//orderedInverters = orderedInverters.OrderBy(gate=>gate.Output).ToList();
+			foreach (var gate in orderedInverters)
 			{
 				double x = inverterX, y = inverterY;
 
@@ -288,11 +294,11 @@ namespace AsyncCircuitVisualizer
 
 				inverterY += ySpacing;
 			}
-
+			_Ands = gates.Where(g => g.Type == "AND").ToList();
 			// Draw AND gates
-			foreach (var gate in gates.Where(g => g.Type == "AND"))
+			foreach (var gate in _Ands)
 			{
-				double x = andX, y = andY;
+				double x = andX+60, y = andY;
 
 				// Create and position the AND gate control
 				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
@@ -302,14 +308,30 @@ namespace AsyncCircuitVisualizer
 				CircuitCanvas.Children.Add(gateControl);
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
+				
+				double lol = memoryY;
+				memoryX = 230;
 				// Draw connections from inputs to the current gate
 				foreach (var input in gate.Inputs)
 				{
+					
+
+					if (input.Contains("Memory"))
+					{
+						var variable = input.Substring(7);
+						Point yValue;
+						gatePositions.TryGetValue(variable, out yValue);
+						memoryX += 30;
+						gatePositions[input] = new Point(memoryX, yValue.Y);
+
+					}
+
 					if (gatePositions.ContainsKey(input))
 					{
 						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
 					}
 				}
+				memoryX = 150;
 
 				andY += ySpacing;
 			}
@@ -317,7 +339,7 @@ namespace AsyncCircuitVisualizer
 			// Draw OR gate
 			foreach (var gate in gates.Where(g => g.Type == "OR"))
 			{
-				double x = orX, y = orY;
+				double x = orX+60, y = orY;
 
 				// Create and position the OR gate control
 				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
@@ -341,17 +363,14 @@ namespace AsyncCircuitVisualizer
 
 			// Draw output
 			UIElement outputControl = CreateGateControl("Output", "Output", new List<string>{ gates.Last().Output }, "Output");
-			Canvas.SetLeft(outputControl, outputX);
+			Canvas.SetLeft(outputControl, outputX+60);
 			Canvas.SetTop(outputControl, outputY);
 
 			CircuitCanvas.Children.Add(outputControl);
-			gatePositions["Output"] = new Point(outputX + 40, outputY + 25);
+			gatePositions["Output2"] = new Point(outputX + 40+60, outputY + 25);
 
 			// Connect last OR gate to output
-			if (gatePositions.ContainsKey(gates.Last().Output))
-			{
-				DrawConnection(gatePositions[gates.Last().Output], gatePositions["Output"]);
-			}
+			DrawConnection(gatePositions["Output"], gatePositions["Output2"]);
 		}
 
 
@@ -382,23 +401,30 @@ namespace AsyncCircuitVisualizer
 			foreach (var term in terms)
 			{
 				var inputs = new List<string>();
+				string asd = string.Empty;
+				List<string> outPut = new List<string>();
 				foreach (var variable in term)
 				{
 					if (variable == '\'')
 					{
 						var lastVar = inputs.Last();
 						inputs.Remove(lastVar);
-						var negatedVar = lastVar + "'";
-						gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { lastVar }, Output = negatedVar });
+						outPut.Remove(asd);
+						var negatedVar = asd + "'".ToString();
+						gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { "Inverter_"+ asd }, Output = negatedVar });
 						inputs.Add(negatedVar);
+						outPut.Add(negatedVar);
 					}
 					else
 					{
-						inputs.Add(variable.ToString());
+						asd = variable.ToString();
+						outPut.Add(asd);
+						inputs.Add("Memory_"+variable.ToString());
+						//gates.Add(new Gate { Type = "Input", Inputs = new List<string> { "MemoryModul_" + variable }, Output = negatedVar });
 					}
 				}
 
-				string andOutput = string.Join("", inputs);
+				string andOutput = string.Join("", outPut);
 				gates.Add(new Gate { Type = "AND", Inputs = inputs, Output = andOutput });
 			}
 
@@ -406,6 +432,16 @@ namespace AsyncCircuitVisualizer
 			var andOutputs = gates.Where(g => g.Type == "AND").Select(g => g.Output).ToList();
 			gates.Add(new Gate { Type = "OR", Inputs = andOutputs, Output = finalOutput });
 
+			for (int i = 0; i < _InputVariables.Count; i++)
+			{
+				List<string> memoryInput = new List<string>();
+				memoryInput.Add(_InputVariables[i].ToString());
+
+				gates.Add(new Gate { Type = "MemoryModul", Inputs = memoryInput, Output = _InputVariables[i] + "'".ToString() });
+			}
+			List<string> outPutOut = new List<string>();
+			outPutOut.Add("Output");
+			gates.Add(new Gate { Type = "Output", Inputs = outPutOut, Output = null });
 			return gates;
 		}
 
@@ -416,12 +452,13 @@ namespace AsyncCircuitVisualizer
 
 			foreach (var gate in gates)
 			{
-				if (gate.Type == "Memory") // Example criterion for memory detection
+				if (gate.Type == "MemoryModul") // Example criterion for memory detection
 				{
 					memoryModules.Add(new Gate
 					{
 						Inputs = gate.Inputs, // Assume first input is the memory input
-						Output = gate.Output
+						Output = "Inverter_"+gate.Inputs[0].ToString(),
+
 					});
 				}
 			}
