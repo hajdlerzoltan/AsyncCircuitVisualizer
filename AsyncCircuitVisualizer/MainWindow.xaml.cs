@@ -1,5 +1,6 @@
 ﻿using AsyncCircuitVisualizer.Models;
 using AsyncCircuitVisualizer.Views;
+using System;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,26 +26,20 @@ namespace AsyncCircuitVisualizer
 		List<Gate> _Ands;
 		List<Gate> _Or;
 		List<Gate> _Inverters;
-		List<Gate> _MemoryModuls;
+		List<Gate> _MemoryModules;
 
 		public MainWindow()
-        {
-            InitializeComponent();
-        }
+		{
+			InitializeComponent();
+		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
 		private void Calculate_Click(object sender, RoutedEventArgs e)
 		{
 			try
 			{
-				// Assuming input is a comma-separated list of minterms
-				string input = InputTextBox.Text; // e.g., "1,3,5,7,8,11,12,17,19,21,23,24,28"
+				string input = InputTextBox.Text;
 				var minterms = input.Split(',').Select(int.Parse).ToList();
-				int variableCount = CountVariables(minterms); // Calculate how many variables (based on the highest minterm)
+				int variableCount = CountVariables(minterms);
 
 				var simplifiedBinary = QuineMcCluskey(minterms, variableCount);
 				var booleanExpression = ConvertToBooleanExpression(simplifiedBinary, GenerateVariableList(variableCount));
@@ -58,40 +53,16 @@ namespace AsyncCircuitVisualizer
 			}
 		}
 
-		private void NewCircuit_Click(object sender, RoutedEventArgs e)
-		{
-			
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="minterms"></param>
-		/// <returns></returns>
 		private int CountVariables(List<int> minterms)
 		{
-			// Get the number of bits required to represent the largest minterm
 			return minterms.Max() == 0 ? 1 : (int)Math.Floor(Math.Log2(minterms.Max())) + 1;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="count"></param>
-		/// <returns></returns>
 		private List<char> GenerateVariableList(int count)
 		{
-			// Generate a list of variables A, B, C, ..., based on the number of variables
 			return Enumerable.Range(0, count).Select(i => (char)('A' + i)).ToList();
 		}
 
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="minterms"></param>
-		/// <param name="variableCount"></param>
-		/// <returns></returns>
 		private string QuineMcCluskey(List<int> minterms, int variableCount)
 		{
 			var groups = new Dictionary<int, List<string>>();
@@ -157,39 +128,6 @@ namespace AsyncCircuitVisualizer
 			return string.Join(", ", primes);
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="binaryTerms"></param>
-		/// <param name="variables"></param>
-		/// <returns></returns>
-		private string ConvertToBooleanExpression(string binaryTerms, List<char> variables)
-		{
-			var terms = binaryTerms.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
-			var result = new List<string>();
-
-			foreach (var term in terms)
-			{
-				var sb = new StringBuilder();
-				for (int i = 0; i < term.Length; i++)
-				{
-					if (term[i] == '1')
-						sb.Append(variables[i]);
-					else if (term[i] == '0')
-						sb.Append(variables[i] + "'");
-				}
-				result.Add(sb.ToString());
-			}
-
-			return string.Join(" + ", result);
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="term1"></param>
-		/// <param name="term2"></param>
-		/// <returns></returns>
 		private string CombineTerms(string term1, string term2)
 		{
 			int diffCount = 0;
@@ -213,15 +151,28 @@ namespace AsyncCircuitVisualizer
 
 			return diffCount == 1 ? result.ToString() : null;
 		}
-		
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="type"></param>
-		/// <param name="output"></param>
-		/// <param name="inputs"></param>
-		/// <returns></returns>
-		/// <exception cref="ArgumentException"></exception>
+
+		private string ConvertToBooleanExpression(string binaryTerms, List<char> variables)
+		{
+			var terms = binaryTerms.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+			var result = new List<string>();
+
+			foreach (var term in terms)
+			{
+				var sb = new StringBuilder();
+				for (int i = 0; i < term.Length; i++)
+				{
+					if (term[i] == '1')
+						sb.Append(variables[i]);
+					else if (term[i] == '0')
+						sb.Append(variables[i] + "'");
+				}
+				result.Add(sb.ToString());
+			}
+
+			return string.Join(" + ", result);
+		}
+
 		private UIElement CreateGateControl(string type, string output, List<string> inputs, string inputName = null)
 		{
 			UserControl gateControl;
@@ -231,41 +182,180 @@ namespace AsyncCircuitVisualizer
 				case "AND":
 					gateControl = new ANDgate();
 					((ANDgate)gateControl).ConfigureGate("AND", inputs.Count);
-					_Gates.Add(gateControl);
 					break;
 
 				case "OR":
 					gateControl = new ORgate();
 					((ORgate)gateControl).ConfigureGate("OR", inputs.Count);
-					_Gates.Add(gateControl);
 					break;
 
 				case "Inverter":
 					gateControl = new Inverter();
-					((Inverter)gateControl).ConfigureGate("1", 1);
-					_Gates.Add(gateControl);
+					((Inverter)gateControl).ConfigureGate("1 "+output, 1);
 					break;
 
 				case "Input":
 					gateControl = new Input();
 					((Input)gateControl).ConfigureGate(inputName, 1);
-					_Gates.Add(gateControl);
+					break;
+
+				case "MemoryModul":
+					gateControl = new MemoryModul();
+					((MemoryModul)gateControl).ConfigureGate("MemoryModule", 1);
+					break;
+
+				case "Output":
+					gateControl = new Output();
+					((Output)gateControl).ConfigureGate("Output", 1);
 					break;
 
 				default:
 					throw new ArgumentException("Unsupported gate type");
 			}
 
-			
-
+			_Gates.Add(gateControl);
 			return gateControl;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="start"></param>
-		/// <param name="end"></param>
+		private void DrawCircuit(string booleanExpression)
+		{
+			CircuitCanvas.Children.Clear();
+
+			var gates = ParseBooleanExpression(booleanExpression);
+			_MemoryModules = IdentifyMemoryModules(gates);
+
+			// Initialize column positions for each gate type
+			double inputX = 50, memoryX = 150, inverterX = 250, andX = 350, orX = 450, outputX = 550;
+			double ySpacing = 100;
+
+			double inputY = 50, memoryY = 50, inverterY = 50, andY = 50, orY = 50, outputY = 50;
+
+			var gatePositions = new Dictionary<string, Point>();
+
+			// Draw input gates
+			foreach (var input in _InputVariables)
+			{
+				UIElement gateControl = CreateGateControl("Input", input.ToString(), null, input.ToString());
+				Canvas.SetLeft(gateControl, inputX);
+				Canvas.SetTop(gateControl, inputY);
+
+				CircuitCanvas.Children.Add(gateControl);
+				gatePositions[input.ToString()] = new Point(inputX + 40, inputY + 25);
+
+				inputY += ySpacing;
+			}
+
+			// Draw memory modules
+			foreach (var memory in _MemoryModules)
+			{
+				UIElement gateControl = CreateGateControl("Memory", memory.Output, memory.Inputs , memory.Output);
+				Canvas.SetLeft(gateControl, memoryX);
+				Canvas.SetTop(gateControl, memoryY);
+
+				CircuitCanvas.Children.Add(gateControl);
+				gatePositions[memory.Output] = new Point(memoryX + 40, memoryY + 25);
+
+				// Connect memory module to its input
+				if (gatePositions.ContainsKey(memory.Inputs[0]))
+				{
+					DrawConnection(gatePositions[memory.Inputs[0]], gatePositions[memory.Output]);
+				}
+
+				memoryY += ySpacing;
+			}
+
+			// Draw inverters
+			foreach (var gate in gates.Where(g => g.Type == "Inverter"))
+			{
+				double x = inverterX, y = inverterY;
+
+				// Create and position the inverter control
+				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
+				Canvas.SetLeft(gateControl, x);
+				Canvas.SetTop(gateControl, y);
+
+				CircuitCanvas.Children.Add(gateControl);
+				gatePositions[gate.Output] = new Point(x + 40, y + 25);
+
+				// Draw connections from inputs to the current gate
+				foreach (var input in gate.Inputs)
+				{
+					if (gatePositions.ContainsKey(input))
+					{
+						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
+					}
+				}
+
+				inverterY += ySpacing;
+			}
+
+			// Draw AND gates
+			foreach (var gate in gates.Where(g => g.Type == "AND"))
+			{
+				double x = andX, y = andY;
+
+				// Create and position the AND gate control
+				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
+				Canvas.SetLeft(gateControl, x);
+				Canvas.SetTop(gateControl, y);
+
+				CircuitCanvas.Children.Add(gateControl);
+				gatePositions[gate.Output] = new Point(x + 40, y + 25);
+
+				// Draw connections from inputs to the current gate
+				foreach (var input in gate.Inputs)
+				{
+					if (gatePositions.ContainsKey(input))
+					{
+						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
+					}
+				}
+
+				andY += ySpacing;
+			}
+
+			// Draw OR gate
+			foreach (var gate in gates.Where(g => g.Type == "OR"))
+			{
+				double x = orX, y = orY;
+
+				// Create and position the OR gate control
+				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
+				Canvas.SetLeft(gateControl, x);
+				Canvas.SetTop(gateControl, y);
+
+				CircuitCanvas.Children.Add(gateControl);
+				gatePositions[gate.Output] = new Point(x + 40, y + 25);
+
+				// Draw connections from inputs to the current gate
+				foreach (var input in gate.Inputs)
+				{
+					if (gatePositions.ContainsKey(input))
+					{
+						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
+					}
+				}
+
+				orY += ySpacing;
+			}
+
+			// Draw output
+			UIElement outputControl = CreateGateControl("Output", "Output", new List<string>{ gates.Last().Output }, "Output");
+			Canvas.SetLeft(outputControl, outputX);
+			Canvas.SetTop(outputControl, outputY);
+
+			CircuitCanvas.Children.Add(outputControl);
+			gatePositions["Output"] = new Point(outputX + 40, outputY + 25);
+
+			// Connect last OR gate to output
+			if (gatePositions.ContainsKey(gates.Last().Output))
+			{
+				DrawConnection(gatePositions[gates.Last().Output], gatePositions["Output"]);
+			}
+		}
+
+
+
 		private void DrawConnection(Point start, Point end)
 		{
 			PathFigure pathFigure = new PathFigure { StartPoint = start };
@@ -284,11 +374,6 @@ namespace AsyncCircuitVisualizer
 			CircuitCanvas.Children.Add(path);
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="expression"></param>
-		/// <returns></returns>
 		private List<Gate> ParseBooleanExpression(string expression)
 		{
 			var gates = new List<Gate>();
@@ -301,18 +386,11 @@ namespace AsyncCircuitVisualizer
 				{
 					if (variable == '\'')
 					{
-						// Handle NOT gate
 						var lastVar = inputs.Last();
 						inputs.Remove(lastVar);
 						var negatedVar = lastVar + "'";
-
-                        if (!gates.Exists(gate => gate.Output == negatedVar))
-                        {
-                            gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { lastVar }, Output = negatedVar });
-                            inputs.Add(negatedVar);
-                        }
-
-
+						gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { lastVar }, Output = negatedVar });
+						inputs.Add(negatedVar);
 					}
 					else
 					{
@@ -320,12 +398,10 @@ namespace AsyncCircuitVisualizer
 					}
 				}
 
-				// Create AND gate for the term
 				string andOutput = string.Join("", inputs);
 				gates.Add(new Gate { Type = "AND", Inputs = inputs, Output = andOutput });
 			}
 
-			// Create OR gate for the final expression
 			var finalOutput = "Output";
 			var andOutputs = gates.Where(g => g.Type == "AND").Select(g => g.Output).ToList();
 			gates.Add(new Gate { Type = "OR", Inputs = andOutputs, Output = finalOutput });
@@ -333,182 +409,24 @@ namespace AsyncCircuitVisualizer
 			return gates;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="booleanExpression"></param>
-		private void DrawCircuit(string booleanExpression)
+		// Helper method to identify memory modules from the gates
+		private List<Gate> IdentifyMemoryModules(List<Gate> gates)
 		{
-			CircuitCanvas.Children.Clear();
-
-			var gates = ParseBooleanExpression(booleanExpression);
-			double x = 50, y = 50;
-			double xSpacing = 150, ySpacing = 100;
-
-			var gatePositions = new Dictionary<string, Point>();
-
-			foreach (var input in _InputVariables) 
-			{
-				UIElement gateControl = new Input();
-				((Input)gateControl).ConfigureGate(input.ToString(), 1);
-
-				Canvas.SetLeft(gateControl, x);
-				Canvas.SetTop(gateControl, y);
-
-				CircuitCanvas.Children.Add(gateControl);
-				gatePositions["input"] = new Point(x + 40, y + 25); // connection point
-
-				y += ySpacing;
-				if (y > CircuitCanvas.Height - ySpacing)
-				{
-					y = 50;
-					x += xSpacing;
-				}
-			}
-
-			_Inverters = gates.Where(x=>x.Type == "Inverter").ToList();
-			_Ands = gates.Where(x => x.Type == "AND").ToList();
-			_Or = gates.Where(x => x.Type == "OR").ToList();
-
-			y = 50;
-			x += xSpacing;
-
-			for (int i = 0; i < _InputVariables.Count; i++)
-			{
-
-                UIElement gateControl = new MemoryModul();
-                ((MemoryModul)gateControl).ConfigureGate("MemoryModule", 1);
-
-                Canvas.SetLeft(gateControl, x);
-                Canvas.SetTop(gateControl, y);
-
-                CircuitCanvas.Children.Add(gateControl);
-                gatePositions["MemoryModule"] = new Point(x + 40, y + 25); // connection point
-
-                y += ySpacing;
-                if (y > CircuitCanvas.Height - ySpacing)
-                {
-                    y = 50;
-                    x += xSpacing;
-                }
-
-            }
-
-			y = 50;
-			x += xSpacing;
-
-			foreach (var inverter in _Inverters)
-			{
-				var gateControl = CreateGateControl(inverter.Type, inverter.Output, inverter.Inputs);
-				Canvas.SetLeft(gateControl, x);
-				Canvas.SetTop(gateControl, y);
-
-				CircuitCanvas.Children.Add(gateControl);
-				gatePositions[inverter.Output] = new Point(x + 80, y + 25); // connection point
-
-                y += ySpacing;
-				//x += xSpacing;
-				if (y > CircuitCanvas.Height - ySpacing)
-				{
-					y = 50;
-					x += xSpacing;
-				}
-			}
-
-			y = 50;
-			x += xSpacing;
-
-			foreach (var gate in _Ands)
-			{
-
-
-				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
-				Canvas.SetLeft(gateControl, x);
-				Canvas.SetTop(gateControl, y);
-
-				CircuitCanvas.Children.Add(gateControl);
-				gatePositions[gate.Output] = new Point(x + 40, y + 25); // connection point
-
-                y += ySpacing;
-				//x += xSpacing;
-				if (y > CircuitCanvas.Height - ySpacing)
-				{
-					y = 50;
-					x += xSpacing;
-				}
-			}
-
-			y = 50;
-			x += xSpacing;
-
-			foreach (var gate in _Or)
-			{
-
-
-				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
-				Canvas.SetLeft(gateControl, x);
-				Canvas.SetTop(gateControl, y);
-
-				CircuitCanvas.Children.Add(gateControl);
-				gatePositions[gate.Output] = new Point(x + 40, y + 25); // connection point
-
-                y += ySpacing;
-				//x += xSpacing;
-				if (y > CircuitCanvas.Height - ySpacing)
-				{
-					y = 50;
-					x += xSpacing;
-				}
-			}
-
-			y = 50;
-			x += xSpacing;
-
-			UIElement gateUI = new MemoryModul();
-			((MemoryModul)gateUI).ConfigureGate("MemoryModule", 1);
-
-			Canvas.SetLeft(gateUI, x);
-			Canvas.SetTop(gateUI, y);
-
-			CircuitCanvas.Children.Add(gateUI);
-			gatePositions["MemoryModule"] = new Point(x + 40, y + 25); // connection point
-
-            y += ySpacing;
-			if (y > CircuitCanvas.Height - ySpacing)
-			{
-				y = 50;
-				x += xSpacing;
-			}
-
-			y = 50;
-			x += xSpacing;
-
-			gateUI = new Output();
-			((Output)gateUI).ConfigureGate("Output", 1);
-
-			Canvas.SetLeft(gateUI, x);
-			Canvas.SetTop(gateUI, y);
-
-			CircuitCanvas.Children.Add(gateUI);
-			gatePositions["MemoryModule"] = new Point(x + 40, y + 25); // connection point
-
-            y += ySpacing;
-			if (y > CircuitCanvas.Height - ySpacing)
-			{
-				y = 50;
-				x += xSpacing;
-			}
+			var memoryModules = new List<Gate>();
 
 			foreach (var gate in gates)
 			{
-				foreach (var input in gate.Inputs)
+				if (gate.Type == "Memory") // Example criterion for memory detection
 				{
-					if (gatePositions.ContainsKey(input) && gatePositions.ContainsKey(gate.Output))
+					memoryModules.Add(new Gate
 					{
-						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
-					}
+						Inputs = gate.Inputs, // Assume first input is the memory input
+						Output = gate.Output
+					});
 				}
 			}
+
+			return memoryModules;
 		}
 	}
 }

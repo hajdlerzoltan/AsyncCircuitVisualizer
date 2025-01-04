@@ -22,6 +22,9 @@ namespace AsyncCircuitVisualizer.Views
 	{
 		public List<Point> InputPoints { get; private set; } = new List<Point>();
 		public Point OutputPoint { get; private set; }
+
+        public event Action<bool> OnPush; // Event to notify when an impulse occurs
+
 		public Input()
 		{
 			InitializeComponent();
@@ -47,6 +50,29 @@ namespace AsyncCircuitVisualizer.Views
 
 			// Output always at the center-right
 			OutputPoint = new Point(GateBody.Width, height / 2);
+		}
+
+		// Event handler for click
+		private async void GateBody_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			// Simulate an impulse
+			TriggerImpulse();
+			await ResetAfterDelay();
+		}
+
+		// Trigger the impulse (state changes to true momentarily)
+		private void TriggerImpulse()
+		{
+			GateBody.Fill = Brushes.Green; // Green for active (impulse)
+			OnPush?.Invoke(true); // Notify listeners
+		}
+
+		// Reset the state after a short delay
+		private async Task ResetAfterDelay()
+		{
+			await Task.Delay(100); // 100 ms delay for the impulse
+			GateBody.Fill = Brushes.LightGray; // Reset to default (inactive)
+			OnPush?.Invoke(false); // Notify listeners of reset
 		}
 	}
 }
