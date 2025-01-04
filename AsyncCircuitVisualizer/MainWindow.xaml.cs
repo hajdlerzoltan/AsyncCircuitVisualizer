@@ -397,12 +397,14 @@ namespace AsyncCircuitVisualizer
 		{
 			var gates = new List<Gate>();
 			var terms = expression.Split('+').Select(term => term.Trim());
+			List<string> negatList = new List<string>();
 
 			foreach (var term in terms)
 			{
 				var inputs = new List<string>();
 				string asd = string.Empty;
 				List<string> outPut = new List<string>();
+
 				foreach (var variable in term)
 				{
 					if (variable == '\'')
@@ -411,9 +413,14 @@ namespace AsyncCircuitVisualizer
 						inputs.Remove(lastVar);
 						outPut.Remove(asd);
 						var negatedVar = asd + "'".ToString();
-						gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { "Inverter_"+ asd }, Output = negatedVar });
-						inputs.Add(negatedVar);
-						outPut.Add(negatedVar);
+						if (!negatList.Contains(negatedVar))
+						{
+							negatList.Add(negatedVar);
+							gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { "Inverter_" + asd }, Output = negatedVar });
+							inputs.Add(negatedVar);
+							outPut.Add(negatedVar);
+						}
+
 					}
 					else
 					{
