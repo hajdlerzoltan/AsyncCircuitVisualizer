@@ -11,11 +11,25 @@
                  Stroke="Black"
                  StrokeThickness="2"
                  MouseLeftButtonDown="GateBody_MouseLeftButtonDown"/>
-        <TextBlock HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontWeight="Bold"
-                   x:Name="GateLabel">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Bottom"
+                       FontWeight="Bold"
+                       x:Name="GateLabel">
             A
-        </TextBlock>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontWeight="Bold"
+                       x:Name="OutputValue"
+                       Grid.Row="1"
+                       >
+            0
+            </TextBlock>
+        </Grid>
     </Grid>
 </UserControl>

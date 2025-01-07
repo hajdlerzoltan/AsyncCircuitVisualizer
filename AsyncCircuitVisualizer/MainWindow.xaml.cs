@@ -201,7 +201,8 @@ namespace AsyncCircuitVisualizer
 
 				case "Memory":
 					gateControl = new MemoryModul();
-					((MemoryModul)gateControl).ConfigureGate("MemoryModule", 1);
+					((MemoryModul)gateControl).ConfigureGate("MemoryModule_" + inputs[0], 1);
+					//var asd = _Gates.Find(x=>x.ConnectedGates )
 					break;
 
 				case "Output":
@@ -241,7 +242,11 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetLeft(gateControl, inputX);
 				Canvas.SetTop(gateControl, inputY);
 
-				CircuitCanvas.Children.Add(gateControl);
+				Application.Current.Dispatcher.Invoke(() => 
+				{
+					CircuitCanvas.Children.Add(gateControl);
+				});
+
 				gatePositions[input.ToString()] = new Point(inputX + 80, inputY + 25);
 
 				inputY += ySpacing;
@@ -256,12 +261,16 @@ namespace AsyncCircuitVisualizer
 
 
 
-				CircuitCanvas.Children.Add(gateControl);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					CircuitCanvas.Children.Add(gateControl);
+				});
 				gatePositions[memory.Output] = new Point(memoryX + 80, memoryY + 25);
 
 				// Connect memory module to its input
 				if (gatePositions.ContainsKey(memory.Inputs[0]))
 				{
+
 					DrawConnection(gatePositions[memory.Inputs[0]], gatePositions[memory.Output]);
 				}
 
@@ -280,7 +289,10 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetLeft(gateControl, x);
 				Canvas.SetTop(gateControl, y);
 
-				CircuitCanvas.Children.Add(gateControl);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					CircuitCanvas.Children.Add(gateControl);
+				});
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
 				// Draw connections from inputs to the current gate
@@ -304,8 +316,10 @@ namespace AsyncCircuitVisualizer
 				var gateControl = CreateGateControl(gate.Type, gate.Output, gate.Inputs);
 				Canvas.SetLeft(gateControl, x);
 				Canvas.SetTop(gateControl, y);
-
-				CircuitCanvas.Children.Add(gateControl);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					CircuitCanvas.Children.Add(gateControl);
+				});
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
 				
@@ -346,7 +360,10 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetLeft(gateControl, x);
 				Canvas.SetTop(gateControl, y);
 
-				CircuitCanvas.Children.Add(gateControl);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					CircuitCanvas.Children.Add(gateControl);
+				});
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
 				// Draw connections from inputs to the current gate
@@ -390,7 +407,11 @@ namespace AsyncCircuitVisualizer
 				Data = geometry
 			};
 
-			CircuitCanvas.Children.Add(path);
+			Application.Current.Dispatcher.Invoke(() => 
+			{
+				CircuitCanvas.Children.Add(path);
+			});
+			
 		}
 
 		private List<Gate> ParseBooleanExpression(string expression)
@@ -416,7 +437,10 @@ namespace AsyncCircuitVisualizer
 						if (!negatList.Contains(negatedVar))
 						{
 							negatList.Add(negatedVar);
-							gates.Add(new Gate { Type = "Inverter", Inputs = new List<string> { "Inverter_" + asd }, Output = negatedVar });
+							gates.Add(new Gate {
+								Type = "Inverter",
+								Inputs = new List<string> { "Inverter_" + asd },
+								Output = negatedVar });
 							inputs.Add(negatedVar);
 							outPut.Add(negatedVar);
 						}

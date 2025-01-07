@@ -15,12 +15,26 @@
                    RadiusY="10">
             
         </Rectangle>
-        <TextBlock HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontWeight="Bold"
-                   x:Name="GateLabel">
-            1
-        </TextBlock>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Bottom"
+                       FontWeight="Bold"
+                       x:Name="GateLabel">
+            Inverter
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontWeight="Bold"
+                       x:Name="OutputValue"
+                       Grid.Row="1"
+                       >
+            0
+            </TextBlock>
+        </Grid>
             
     </Grid>
 </UserControl>

@@ -7,6 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
+
         <Rectangle x:Name="GateBody"
                    Fill="LightGray"
                    Stroke="Black"
@@ -14,12 +15,27 @@
                    RadiusX="10"
                    RadiusY="10">
 
+
         </Rectangle>
-        <TextBlock HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontWeight="Bold"
-                   x:Name="GateLabel">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Bottom"
+                       FontWeight="Bold"
+                       x:Name="GateLabel">
             AND
-        </TextBlock>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontWeight="Bold"
+                       x:Name="OutputValue"
+                       Grid.Row="1"
+                       >
+            0
+            </TextBlock>
+        </Grid>
     </Grid>
 </UserControl>
