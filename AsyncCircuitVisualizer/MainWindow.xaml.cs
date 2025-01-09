@@ -241,7 +241,7 @@ namespace AsyncCircuitVisualizer
 				UIElement gateControl = CreateGateControl("Input", input.ToString(), null, input.ToString());
 				Canvas.SetLeft(gateControl, inputX);
 				Canvas.SetTop(gateControl, inputY);
-
+				((Input)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(input.ToString()) && x.Type == "MemoryModul"));
 				Application.Current.Dispatcher.Invoke(() => 
 				{
 					CircuitCanvas.Children.Add(gateControl);
@@ -259,9 +259,9 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetLeft(gateControl, memoryX);
 				Canvas.SetTop(gateControl, memoryY);
 
+                ((MemoryModul)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(memory.Output) && x.Type == "Inverter"));
 
-
-				Application.Current.Dispatcher.Invoke(() =>
+                Application.Current.Dispatcher.Invoke(() =>
 				{
 					CircuitCanvas.Children.Add(gateControl);
 				});
@@ -289,7 +289,8 @@ namespace AsyncCircuitVisualizer
 				Canvas.SetLeft(gateControl, x);
 				Canvas.SetTop(gateControl, y);
 
-				Application.Current.Dispatcher.Invoke(() =>
+
+                Application.Current.Dispatcher.Invoke(() =>
 				{
 					CircuitCanvas.Children.Add(gateControl);
 				});
@@ -298,7 +299,9 @@ namespace AsyncCircuitVisualizer
 				// Draw connections from inputs to the current gate
 				foreach (var input in gate.Inputs)
 				{
-					if (gatePositions.ContainsKey(input))
+                    ((Inverter)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(input) && x.Type == "AND" || x.Type == "MemoryModul"));
+
+                    if (gatePositions.ContainsKey(input))
 					{
 						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
 					}
@@ -328,9 +331,11 @@ namespace AsyncCircuitVisualizer
 				// Draw connections from inputs to the current gate
 				foreach (var input in gate.Inputs)
 				{
-					
 
-					if (input.Contains("Memory"))
+
+                    ((ANDgate)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(input) && x.Type == "Input" || x.Type == "Inverter"));
+
+                    if (input.Contains("Memory"))
 					{
 						var variable = input.Substring(7);
 						Point yValue;

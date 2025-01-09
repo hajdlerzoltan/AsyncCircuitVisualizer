@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AsyncCircuitVisualizer.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,8 +23,9 @@ namespace AsyncCircuitVisualizer.Views
 	{
 		public List<Point> InputPoints { get; private set; } = new List<Point>();
 		public Point OutputPoint { get; private set; }
+        public List<Gate>? ConnectedGates = new List<Gate>();
 
-		public MemoryModul()
+        public MemoryModul()
 		{
 			InitializeComponent();
 		}
