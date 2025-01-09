@@ -221,9 +221,11 @@ namespace AsyncCircuitVisualizer
 		private void DrawCircuit(string booleanExpression)
 		{
 			CircuitCanvas.Children.Clear();
+			List<UIElement> GateViews = new List<UIElement>();
 
 			var gates = ParseBooleanExpression(booleanExpression);
-			_MemoryModules = IdentifyMemoryModules(gates);
+
+			gates.AddRange(IdentifyMemoryModules(gates));
 
 			int xOffset = 100;
 
@@ -241,26 +243,37 @@ namespace AsyncCircuitVisualizer
 				UIElement gateControl = CreateGateControl("Input", input.ToString(), null, input.ToString());
 				Canvas.SetLeft(gateControl, inputX);
 				Canvas.SetTop(gateControl, inputY);
-				((Input)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(input.ToString()) && x.Type == "MemoryModul"));
+
+				Gate outputGate = gates.Find(x => x.Inputs.Contains(input.ToString()) && x.Type == "MemoryModul");
+
+				((Input)gateControl).ConnectedGates.Add(outputGate);
+
 				Application.Current.Dispatcher.Invoke(() => 
 				{
 					CircuitCanvas.Children.Add(gateControl);
 				});
 
+				GateViews.Add(gateControl);
 				gatePositions[input.ToString()] = new Point(inputX + 80, inputY + 25);
 
 				inputY += ySpacing;
 			}
 
 			// Draw memory modules
-			foreach (var memory in _MemoryModules)
+			foreach (var memory in gates.Where(g => g.Type == "MemoryModul"))
 			{
 				UIElement gateControl = CreateGateControl("Memory", memory.Output, memory.Inputs , memory.Output);
 				Canvas.SetLeft(gateControl, memoryX);
 				Canvas.SetTop(gateControl, memoryY);
 
-                ((MemoryModul)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(memory.Output) && x.Type == "Inverter"));
+				if (memory != null)
+				{
+					Gate self = memory;
+				}
 
+
+				((MemoryModul)gateControl).InputGates.Add(memory);
+				((MemoryModul)gateControl).OutputGates.Add(gates.Find(x => x.Inputs.Contains(memory.Output) && x.Type == "Inverter"));
                 Application.Current.Dispatcher.Invoke(() =>
 				{
 					CircuitCanvas.Children.Add(gateControl);
@@ -331,9 +344,18 @@ namespace AsyncCircuitVisualizer
 				// Draw connections from inputs to the current gate
 				foreach (var input in gate.Inputs)
 				{
+					string editedInput = input.Replace("Memory_", "");
 
-
-                    ((ANDgate)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(input) && x.Type == "Input" || x.Type == "Inverter"));
+					if (editedInput.Contains("'"))
+					{
+						((ANDgate)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(editedInput) && x.Type == "Input"
+						|| x.Type == "Inverter" && !((ANDgate)gateControl).ConnectedGates.Contains(x)));
+					}
+					else
+					{
+						((ANDgate)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(editedInput) && x.Type == "MemoryModul"
+						 && !((ANDgate)gateControl).ConnectedGates.Contains(x)));
+					}
 
                     if (input.Contains("Memory"))
 					{
@@ -374,6 +396,10 @@ namespace AsyncCircuitVisualizer
 				// Draw connections from inputs to the current gate
 				foreach (var input in gate.Inputs)
 				{
+					var andGates = gates.FindAll(x => x.Type == "AND");
+
+					((ORgate)gateControl).ConnectedGates.AddRange(andGates);
+
 					if (gatePositions.ContainsKey(input))
 					{
 						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
@@ -387,9 +413,10 @@ namespace AsyncCircuitVisualizer
 			UIElement outputControl = CreateGateControl("Output", "Output", new List<string>{ gates.Last().Output }, "Output");
 			Canvas.SetLeft(outputControl, outputX+60);
 			Canvas.SetTop(outputControl, outputY);
-
+			((Output)outputControl).ConnectedGates.Add(gates.Last());
 			CircuitCanvas.Children.Add(outputControl);
 			gatePositions["Output2"] = new Point(outputX + 40+60, outputY + 25);
+
 
 			// Connect last OR gate to output
 			DrawConnection(gatePositions["Output"], gatePositions["Output2"]);
@@ -492,10 +519,12 @@ namespace AsyncCircuitVisualizer
 				{
 					memoryModules.Add(new Gate
 					{
-						Inputs = gate.Inputs, // Assume first input is the memory input
-						Output = "Inverter_"+gate.Inputs[0].ToString(),
+
 
 					});
+
+					gate.Inputs = gate.Inputs; // Assume first input is the memory input
+					gate.Output = "Inverter_" + gate.Inputs[0].ToString();
 				}
 			}
 

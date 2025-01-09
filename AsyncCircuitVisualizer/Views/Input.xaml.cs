@@ -1,6 +1,7 @@
 ﻿using AsyncCircuitVisualizer.Models;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace AsyncCircuitVisualizer.Views
 		public List<Point> InputPoints { get; private set; } = new List<Point>();
 		public Point OutputPoint { get; private set; }
 
-		public List<Gate>? ConnectedGates = new List<Gate>();
+		public ObservableCollection<Gate>? ConnectedGates = new ObservableCollection<Gate>();
 
         public event Action<bool> OnPush; // Event to notify when an impulse occurs
 
@@ -60,6 +61,7 @@ namespace AsyncCircuitVisualizer.Views
 		{
 			// Simulate an impulse
 			TriggerImpulse();
+			StateChange();
 			await ResetAfterDelay();
 		}
 
@@ -78,6 +80,18 @@ namespace AsyncCircuitVisualizer.Views
 			GateBody.Fill = Brushes.LightGray; // Reset to default (inactive)
 			OutputValue.Text = "0";
 			OnPush?.Invoke(false); // Notify listeners of reset
+		}
+
+		public void StateChange() 
+		{
+			if (ConnectedGates[0].State == false)
+			{
+				ConnectedGates[0].State = true;
+			}
+			else 
+			{
+				ConnectedGates[0].State = false;
+			}
 		}
 	}
 }
