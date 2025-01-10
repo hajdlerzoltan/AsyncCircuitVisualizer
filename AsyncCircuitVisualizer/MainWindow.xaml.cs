@@ -1,6 +1,9 @@
 ﻿using AsyncCircuitVisualizer.Models;
 using AsyncCircuitVisualizer.Views;
 using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -202,7 +205,6 @@ namespace AsyncCircuitVisualizer
 				case "Memory":
 					gateControl = new MemoryModul();
 					((MemoryModul)gateControl).ConfigureGate("MemoryModule_" + inputs[0], 1);
-					//var asd = _Gates.Find(x=>x.ConnectedGates )
 					break;
 
 				case "Output":
@@ -220,12 +222,13 @@ namespace AsyncCircuitVisualizer
 
 		private void DrawCircuit(string booleanExpression)
 		{
+			_Gates.Clear();
 			CircuitCanvas.Children.Clear();
 			List<UIElement> GateViews = new List<UIElement>();
 
 			var gates = ParseBooleanExpression(booleanExpression);
 
-			gates.AddRange(IdentifyMemoryModules(gates));
+            gates.AddRange(IdentifyMemoryModules(gates));
 
 			int xOffset = 100;
 
@@ -309,10 +312,16 @@ namespace AsyncCircuitVisualizer
 				});
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
-				// Draw connections from inputs to the current gate
-				foreach (var input in gate.Inputs)
+
+                ((Inverter)gateControl).InputGates.Add(gate);
+				Debug.WriteLine(gate.Inputs[0] + gate.Id);
+
+                ((Inverter)gateControl).OutputGates.Add(gates.Find(x => x.Inputs.Contains(gate.Output) && x.Type == "AND" || x.Type == "MemoryModul"));
+
+                // Draw connections from inputs to the current gate
+                foreach (var input in gate.Inputs)
 				{
-                    ((Inverter)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(input) && x.Type == "AND" || x.Type == "MemoryModul"));
+                    
 
                     if (gatePositions.ContainsKey(input))
 					{
@@ -338,8 +347,9 @@ namespace AsyncCircuitVisualizer
 				});
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
-				
-				double lol = memoryY;
+                ((ANDgate)gateControl).OutputGates.Add(gates.Find(x=>x.Type == "OR"));
+                ((ANDgate)gateControl).Self.Add(gate);
+                double lol = memoryY;
 				memoryX = 230;
 				// Draw connections from inputs to the current gate
 				foreach (var input in gate.Inputs)
@@ -348,13 +358,31 @@ namespace AsyncCircuitVisualizer
 
 					if (editedInput.Contains("'"))
 					{
-						((ANDgate)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(editedInput) && x.Type == "Input"
-						|| x.Type == "Inverter" && !((ANDgate)gateControl).ConnectedGates.Contains(x)));
+						((ANDgate)gateControl).InputGates.Add(gates.Find(x => x.Output.Contains(editedInput) && x.Type == "Inverter" && !((ANDgate)gateControl).OutputGates.Contains(x)));
 					}
 					else
 					{
-						((ANDgate)gateControl).ConnectedGates.Add(gates.Find(x => x.Inputs.Contains(editedInput) && x.Type == "MemoryModul"
-						 && !((ANDgate)gateControl).ConnectedGates.Contains(x)));
+						var asd = gates.FindAll(x=>x.Type == "MemoryModul");
+
+						List<string> editedInputList = new List<string>();
+						editedInputList.Add(editedInput);
+
+						//var asd = gates.FindAll(x=>x.Inputs.Contains(input) || x.Output.Contains(input));
+						//var asff = _Gates.OfType<MemoryModul>().FirstOrDefault(x=>x.InputGates.FirstOrDefault(y=>y.Inputs.Contains(editedInput)));
+
+						Gate newMemory = new Gate { Type = "MemoryModul", Inputs = editedInputList, Output = input };
+
+                        gates.Add(newMemory);
+
+                        var memoryViewModel = _Gates
+							.OfType<MemoryModul>() // Filter gates that are of type MemoryModul
+							.FirstOrDefault(modul => modul.InputGates
+								.Any(y => y.Type == "MemoryModul" && y.Inputs.Contains(editedInput)));
+						memoryViewModel.InputGates.Add(newMemory);
+
+                        var memory = gates.Find(x => x.Inputs.Contains(editedInput) && x.Type == "MemoryModul"
+						 && !((ANDgate)gateControl).InputGates.Contains(x));
+                        ((ANDgate)gateControl).InputGates.Add(memory);
 					}
 
                     if (input.Contains("Memory"))
@@ -393,18 +421,27 @@ namespace AsyncCircuitVisualizer
 				});
 				gatePositions[gate.Output] = new Point(x + 40, y + 25);
 
-				// Draw connections from inputs to the current gate
-				foreach (var input in gate.Inputs)
-				{
-					var andGates = gates.FindAll(x => x.Type == "AND");
+                //((ORgate)gateControl).InputGates.Add(gate);
+                ((ORgate)gateControl).Self.Add(gate);
+                ((ORgate)gateControl).OutputGates.Add(gates.Find(x=>x.Type == "Output"));
 
-					((ORgate)gateControl).ConnectedGates.AddRange(andGates);
+                // Draw connections from inputs to the current gate
+                foreach (var input in gate.Inputs)
+				{
+					List<Gate> andGates = gates.FindAll(x => x.Type == "AND");
+
+					foreach (var item in andGates)
+					{
+                        ((ORgate)gateControl).InputGates.Add(item);
+                    }
+
 
 					if (gatePositions.ContainsKey(input))
 					{
 						DrawConnection(gatePositions[input], gatePositions[gate.Output]);
 					}
 				}
+
 
 				orY += ySpacing;
 			}
@@ -413,7 +450,8 @@ namespace AsyncCircuitVisualizer
 			UIElement outputControl = CreateGateControl("Output", "Output", new List<string>{ gates.Last().Output }, "Output");
 			Canvas.SetLeft(outputControl, outputX+60);
 			Canvas.SetTop(outputControl, outputY);
-			((Output)outputControl).ConnectedGates.Add(gates.Last());
+			((Output)outputControl).InputGates.Add(gates.Find(x => x.Type == "Output"));
+			//((Output)outputControl).Self.Add(gates.Last());
 			CircuitCanvas.Children.Add(outputControl);
 			gatePositions["Output2"] = new Point(outputX + 40+60, outputY + 25);
 
@@ -472,7 +510,9 @@ namespace AsyncCircuitVisualizer
 							gates.Add(new Gate {
 								Type = "Inverter",
 								Inputs = new List<string> { "Inverter_" + asd },
-								Output = negatedVar });
+								Output = negatedVar,
+								State = true
+							});
 							inputs.Add(negatedVar);
 							outPut.Add(negatedVar);
 						}

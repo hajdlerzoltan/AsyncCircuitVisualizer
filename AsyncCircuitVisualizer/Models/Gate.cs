@@ -21,6 +21,7 @@ namespace AsyncCircuitVisualizer.Models
 
 		public List<string> Inputs { get; set; } = new();
 		public string? Output { get; set; }
+		//public List<string>? Output { get; set; }
 
 		public bool State
 		{

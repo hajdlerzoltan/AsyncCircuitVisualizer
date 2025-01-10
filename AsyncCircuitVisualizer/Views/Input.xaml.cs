@@ -82,6 +82,7 @@ namespace AsyncCircuitVisualizer.Views
 			OnPush?.Invoke(false); // Notify listeners of reset
 		}
 
+
 		public void StateChange() 
 		{
 			if (ConnectedGates[0].State == false)

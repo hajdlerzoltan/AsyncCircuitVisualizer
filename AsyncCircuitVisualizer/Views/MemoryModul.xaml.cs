@@ -75,28 +75,64 @@ namespace AsyncCircuitVisualizer.Views
 			}
 		}
 
-		private void Gate_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void ChangeColor()
+        {
+            if (InputGates[0].State == true)
+            {
+                GateBody.Fill = Brushes.Green;
+            }
+            else
+            {
+                GateBody.Fill = Brushes.LightGray;
+            }
+        }
+
+        private void Gate_PropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
 			if (e.PropertyName == nameof(Gate.State))
 			{
 				// Handle State change here
 				Gate gate = (Gate)sender;
+				//var outputGate = OutputGates.First(x => x.Output == gate.Output);
 
 				string output = "0";
 
 				if (gate.State) 
 				{
+					foreach (var outputGate in OutputGates)
+					{
+						if (outputGate.Type == "Inverter")
+						{
+							outputGate.State = false;
+						}
+						else
+						{
+							outputGate.State = true;
+						}
+					}
 					output = "1";
 				}
 				else
 				{
-					output = "0";
+                    foreach (var outputGate in OutputGates)
+                    {
+                        if (outputGate.Type == "Inverter")
+                        {
+                            outputGate.State = true;
+                        }
+                        else
+                        {
+                            outputGate.State = false;
+                        }
+                    }
+                    output = "0";
 				}	
 
 				Application.Current.Dispatcher.Invoke(() =>
 				{
 					OutputValue.Text = output;
-				});
+                    ChangeColor();
+                });
 
 				//System.Diagnostics.Debug.WriteLine($"Gate state changed to: {gate.State}");
 				//System.Diagnostics.Debug.WriteLine($"Gate state changed to: {gate.Id}");

@@ -32,7 +32,7 @@
                        x:Name="OutputValue"
                        Grid.Row="1"
                        >
-            0
+            1
             </TextBlock>
         </Grid>
             

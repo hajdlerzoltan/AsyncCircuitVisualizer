@@ -1,6 +1,8 @@
 ﻿using AsyncCircuitVisualizer.Models;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,12 +25,15 @@ namespace AsyncCircuitVisualizer.Views
 	{
 		public List<Point> InputPoints { get; private set; } = new List<Point>();
 		public Point OutputPoint { get; private set; }
-		public List<Gate>? ConnectedGates = new List<Gate>();
+        public ObservableCollection<Gate> InputGates { get; set; } = new ObservableCollection<Gate>();
+        public ObservableCollection<Gate> OutputGates { get; set; } = new ObservableCollection<Gate>();
+        public ObservableCollection<Gate> Self { get; set; } = new ObservableCollection<Gate>();
 
-		public Output()
+        public Output()
 		{
 			InitializeComponent();
-		}
+            InputGates.CollectionChanged += Gates_CollectionChanged;
+        }
 
 		public void ConfigureGate(string label, int inputCount)
 		{
@@ -51,5 +56,66 @@ namespace AsyncCircuitVisualizer.Views
 			// Output always at the center-right
 			OutputPoint = new Point(GateBody.Width, height / 2);
 		}
-	}
+
+        private void Gate_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Gate.State))
+            {
+                // Handle State change here
+                Gate gate = (Gate)sender;
+
+                string output = "0";
+
+                if (gate.State == true)
+                {
+                    output = "1";
+                    ChangeColor();
+                }
+                else 
+                {
+                    output = "0";
+                    ChangeColor();
+                }
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    OutputValue.Text = output;
+                });
+
+                //System.Diagnostics.Debug.WriteLine($"Gate state changed to: {gate.State}");
+                //System.Diagnostics.Debug.WriteLine($"Gate state changed to: {gate.Id}");
+            }
+        }
+
+        private void ChangeColor()
+        {
+            if (InputGates[0].State == true)
+            {
+                GateBody.Fill = Brushes.Green;
+            }
+            else
+            {
+                GateBody.Fill = Brushes.LightGray;
+            }
+        }
+
+        private void Gates_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (Gate gate in InputGates)
+                {
+                    gate.PropertyChanged += Gate_PropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (Gate gate in InputGates)
+                {
+                    gate.PropertyChanged -= Gate_PropertyChanged;
+                }
+            }
+        }
+    }
 }
